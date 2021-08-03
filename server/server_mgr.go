@@ -213,7 +213,7 @@ func ParseVmessLink(vmessStr string) (*conf.VmessJson, string) {
 		if conf.ServerConfigNow.AllowLocalConnect {
 			bindAddr = "0.0.0.0"
 		}
-		configJson = strings.Replace(configJson, "{bindAddr}", bindAddr, 1)
+		configJson = strings.Replace(configJson, "{bindAddr}", bindAddr, -1)
 
 		return vmessJsonObj, configJson
 	} else {
