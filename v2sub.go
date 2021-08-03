@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-const versionMsg = "Beta 1.0.1"
+const versionMsg = "Release 1.0.0, 2021.08.03"
 
 func main() {
 
