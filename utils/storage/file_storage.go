@@ -61,14 +61,14 @@ func LoadV2ConfigModule() string {
 	configFile := file.OpenFile(dir.AbsPath() + "/" + moduleFileName)
 	read, err := configFile.Read()
 	if err == nil && string(read) != "" {
-    //log.E("read config file: " + configFile.AbsPath() +" error")
-    log.I("get module from config_module.json")
+		//log.E("read config file: " + configFile.AbsPath() +" error")
+		log.I("get module from config_module.json")
 		return string(read)
 	} else {
-    // 创建 module
-    log.I("get module from default module")
+		// 创建 module
+		log.I("get module from default module")
 		createV2ConfigModule()
-    log.I("flush default config module to " + configDirPath + "/" + moduleFileName)
+		log.I("flush default config module to " + configDirPath + "/" + moduleFileName)
 		return module
 	}
 }
@@ -100,7 +100,8 @@ var module = `{
     {
       "tag": "socks",
       "port": {sPort},
-      "listen": "127.0.0.1",
+      "listen": "{bindAddr}",
+      // "listen": "127.0.0.1",
       "protocol": "socks",
       "sniffing": {
         "enabled": true,
@@ -118,7 +119,8 @@ var module = `{
     {
       "tag": "http",
       "port": {hPort},
-      "listen": "127.0.0.1",
+      "listen": "{bindAddr}",
+      // "listen": "127.0.0.1",
       "protocol": "http",
       "sniffing": {
         "enabled": true,

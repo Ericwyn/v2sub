@@ -32,6 +32,12 @@ func LoadLocalConfig() {
 			if err != nil {
 				log.E("parse server config file to json error")
 			}
+			if ServerConfigNow.SocksPort == 0 {
+				ServerConfigNow.SocksPort = 1080
+			}
+			if ServerConfigNow.HttpPort == 0 {
+				ServerConfigNow.HttpPort = 1081
+			}
 		}
 
 		if ServerConfigNow.ServerList == nil {

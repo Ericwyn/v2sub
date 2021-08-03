@@ -29,11 +29,15 @@ linux 上面 v2ray 订阅管理工具, 支持获取 vmess 订阅
     -ser speedtest
         使用 tcping 查看各个节点的连接速度
     
-管理 (TODO)
+连接配置管理
     -conf sport {socket_port} 
         socket 端口号管理, 默认 1080
     -conf hport {http_port} 
         http 端口号管理， 默认1081
+    -conf lconn {true|false} 
+        是否允许来自局域网的连接，默认为 false
+    -conf list
+        展示当前的 port、lconn 配置
   
 连接
     -conn start 
@@ -83,6 +87,17 @@ linux 上面 v2ray 订阅管理工具, 支持获取 vmess 订阅
 #[2]  JMS@xxx.jamjams.net:11111                          xxx.xxx.xxx.xxx         52623      tcp
 # 3   JMS@xxx.jamjams.net:11111                          xxx.xxx.xxx.xxx         52623      tcp
 #=======================================================
+
+# 查看当前连接配置, 包括 socks 端口 / http 端口 / 局域网连接
+./v2sub -conf list
+#[v2sub-INFO] [0803-205402] Config SocksPort:       1080
+#[v2sub-INFO] [0803-205402] Config HttpPort:        1081
+#[v2sub-INFO] [0803-205402] Config AllLocalConnect: false
+
+# 将 http 代理端口设置为 10800
+./v2sub -conf hport 10800
+# 允许来自局域网的设备连接代理
+./v2sub -conf lconn true
 
 # 杀死当前正在运行的 v2ray 和 v2sub 程序
 ./v2sub -conn kill

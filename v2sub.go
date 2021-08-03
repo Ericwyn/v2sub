@@ -39,6 +39,8 @@ func parseArg(args []string) {
 		fmt.Println("https://github.com/Ericwyn/v2sub")
 	case "-sub":
 		sub.ParseArgs(args[1:])
+	case "-conf": // 设置端口/局域网连接
+		conf.ParseArgs(args[1:])
 	case "-ser":
 		server.ParseArgs(args[1:])
 	case "-conn":
@@ -51,7 +53,7 @@ func parseArg(args []string) {
 
 func printArgsHelp() {
 	fmt.Println(
-`订阅管理:
+		`订阅管理:
     -sub add {name} {url} 
         添加一个订阅，订阅节点自动增加到 ser list
     -sub update {name} 
@@ -75,11 +77,15 @@ func printArgsHelp() {
     -ser speedtest
         使用 tcping 查看各个节点的连接速度
     
-管理 (TODO)
+连接配置管理
     -conf sport {socket_port} 
         socket 端口号管理, 默认 1080
     -conf hport {http_port} 
         http 端口号管理， 默认1081
+    -conf lconn {true|false} 
+        是否允许来自局域网的连接，默认为 false
+    -conf list
+        展示当前的 port、lconn 配置
   
 连接
     -conn start 

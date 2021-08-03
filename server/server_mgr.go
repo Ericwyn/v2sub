@@ -60,7 +60,7 @@ func SpeedTestAll(setDefaultConfigFlag bool) {
 
 	if len(speedTestResultServer) > 0 {
 		fastServer := speedTestResultServer[0]
-		for i,server := range conf.ServerConfigNow.ServerList {
+		for i, server := range conf.ServerConfigNow.ServerList {
 			if fastServer.Vmess.Ps == server.Vmess.Ps && fastServer.Vmess.Port == server.Vmess.Port &&
 				fastServer.Vmess.Add == server.Vmess.Add {
 
@@ -98,10 +98,10 @@ func SpeedTestAll(setDefaultConfigFlag bool) {
 }
 
 // 返回一个
-func SpeedTestFun(i int, server conf.VServer, wg *sync.WaitGroup, serverList *[]conf.VServer)  {
+func SpeedTestFun(i int, server conf.VServer, wg *sync.WaitGroup, serverList *[]conf.VServer) {
 	//执行 ping -c 4 baidu.com | grep '^rtt' | awk -F"/" '{print $5F}'
 	result, err := command.RunResult("ping -c 3 " + server.Vmess.Add + " | grep '^rtt' | awk -F\"/\" '{print $5F}'")
-	if err == nil  {
+	if err == nil {
 		result = strings.Replace(result, " ", "", -1)
 		result = strings.Replace(result, "\n", "", -1)
 		result = strings.Replace(result, "\r", "", -1)
@@ -119,7 +119,7 @@ func SpeedTestFun(i int, server conf.VServer, wg *sync.WaitGroup, serverList *[]
 				putil.F(server.Vmess.Add, 24),
 				putil.F(server.Vmess.Port, 10),
 				putil.F(server.Vmess.Net, 5),
-				putil.F(fmt.Sprint(speedMs) + " ms", 5),
+				putil.F(fmt.Sprint(speedMs)+" ms", 5),
 			)
 		} else {
 			fmt.Println(
@@ -128,7 +128,7 @@ func SpeedTestFun(i int, server conf.VServer, wg *sync.WaitGroup, serverList *[]
 				putil.F(server.Vmess.Add, 24),
 				putil.F(server.Vmess.Port, 10),
 				putil.F(server.Vmess.Net, 5),
-				putil.F(fmt.Sprint(speedMs) + " ms", 5),
+				putil.F(fmt.Sprint(speedMs)+" ms", 5),
 			)
 		}
 	} else {
@@ -198,11 +198,25 @@ func ParseVmessLink(vmessStr string) (*conf.VmessJson, string) {
 		log.I("get vmess json: ", vmessJson)
 		// 通过 vmess 链接来获取 config.VServer 对象
 		vmessJsonObj, configJson := conf.ParseVmessConfigToConfigJson(vmessJson)
-		configJson = strings.Replace(configJson, "{sPort}", "1080", 1)
-		configJson = strings.Replace(configJson, "{hPort}", "1081", 1)
+
+		// 设置 http 和 socks 的链接
+		configJson = strings.Replace(configJson, "{sPort}",
+			strconv.Itoa(conf.ServerConfigNow.SocksPort),
+			1)
+
+		configJson = strings.Replace(configJson, "{hPort}",
+			strconv.Itoa(conf.ServerConfigNow.HttpPort),
+			1)
+
+		// 设置是否允许来自局域网的连接
+		bindAddr := "127.0.0.1"
+		if conf.ServerConfigNow.AllowLocalConnect {
+			bindAddr = "0.0.0.0"
+		}
+		configJson = strings.Replace(configJson, "{bindAddr}", bindAddr, 1)
+
 		return vmessJsonObj, configJson
 	} else {
 		return nil, ""
 	}
 }
-

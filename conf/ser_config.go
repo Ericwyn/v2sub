@@ -10,8 +10,11 @@ import (
 
 // 记录一个服务器， 主要记录 vmess 连接和对应的 config.json
 type ServerConfig struct {
-	Id         int
-	ServerList []VServer
+	Id                int
+	SocksPort         int // socks port
+	HttpPort          int // https port
+	AllowLocalConnect bool
+	ServerList        []VServer
 }
 
 type VServer struct {
