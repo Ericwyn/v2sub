@@ -3,6 +3,9 @@ linux 上面 v2ray 订阅管理工具, 支持获取 vmess 订阅
 
 帮助自己在 linux 上面订阅 [JustMySocks](https://justmysocks.net/members/aff.php?aff=18111)
 
+v2sub 是命令行工具，支持在 linux 下命令行运行，也可以交叉编译之后直接放在软路由里面跑，
+如果想要在更加方便的进行远程控制的话，推荐使用带有 http api 的 [v2sub-w](./README-Web.md) 
+
 ## 功能支持
 ```
 订阅管理:
