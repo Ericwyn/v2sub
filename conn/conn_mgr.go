@@ -67,7 +67,7 @@ func startV2ray() {
 	fmt.Println()
 	fmt.Println()
 
-	err := command.Run(v2rayBinPath, "-config", conf.GetV2rayConfigPath())
+	err := command.RunSync(v2rayBinPath, "-config", conf.GetV2rayConfigPath())
 	if err != nil {
 		log.E("run command error", []string{v2rayBinPath, "-c", conf.GetV2rayConfigPath()})
 		log.E(err.Error())
@@ -78,7 +78,6 @@ func startV2ray() {
 //
 func KillV2Sub() {
 	processes, _ := process.Processes()
-	fmt.Println()
 	pidCurrent := os.Getpid()
 	for _, p := range processes {
 		cmdline, err := p.Cmdline()

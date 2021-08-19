@@ -9,6 +9,7 @@ import (
 	"github.com/Ericwyn/v2sub/utils/param"
 	"github.com/Ericwyn/v2sub/utils/putil"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -49,17 +50,37 @@ func SpeedTestAll(setDefaultConfigFlag bool) {
 		putil.F("类型", 5),
 		putil.F("测速", 5),
 	)
-	var wg sync.WaitGroup
-	var speedTestResultServer []conf.VServer = make([]conf.VServer, 0)
-	for i, config := range conf.ServerConfigNow.ServerList {
-		wg.Add(1)
-		go SpeedTestFun(i, config, &wg, &speedTestResultServer)
+
+	speedTestResultServer := SortBySpeedTest(conf.ServerConfigNow.ServerList)
+
+	for _, speedServer := range speedTestResultServer {
+		server := speedServer.VServer
+		speedMs := speedServer.Speed
+		i := speedServer.Index
+		if i == conf.ServerConfigNow.Id {
+			fmt.Println(
+				putil.F("["+strconv.Itoa(i)+"]", 4),
+				putil.F(server.Vmess.Ps, 50),
+				putil.F(server.Vmess.Add, 24),
+				putil.F(server.Vmess.Port, 10),
+				putil.F(server.Vmess.Net, 5),
+				putil.F(fmt.Sprint(speedMs)+" ms", 5),
+			)
+		} else {
+			fmt.Println(
+				putil.F(" "+strconv.Itoa(i), 4),
+				putil.F(server.Vmess.Ps, 50),
+				putil.F(server.Vmess.Add, 24),
+				putil.F(server.Vmess.Port, 10),
+				putil.F(server.Vmess.Net, 5),
+				putil.F(fmt.Sprint(speedMs)+" ms", 5),
+			)
+		}
 	}
-	wg.Wait()
 	fmt.Println("=======================================================")
 
 	if len(speedTestResultServer) > 0 {
-		fastServer := speedTestResultServer[0]
+		fastServer := speedTestResultServer[0].VServer
 		for i, server := range conf.ServerConfigNow.ServerList {
 			if fastServer.Vmess.Ps == server.Vmess.Ps && fastServer.Vmess.Port == server.Vmess.Port &&
 				fastServer.Vmess.Add == server.Vmess.Add {
@@ -97,44 +118,61 @@ func SpeedTestAll(setDefaultConfigFlag bool) {
 
 }
 
-// 返回一个
-func SpeedTestFun(i int, server conf.VServer, wg *sync.WaitGroup, serverList *[]conf.VServer) {
-	//执行 ping -c 4 baidu.com | grep '^rtt' | awk -F"/" '{print $5F}'
-	result, err := command.RunResult("ping -c 3 " + server.Vmess.Add + " | grep '^rtt' | awk -F\"/\" '{print $5F}'")
+type VServerSpeedSort struct {
+	Speed   float64
+	Index   int
+	VServer conf.VServer
+}
+
+// 直接获取一个速度排序，阻塞式，不输出文件
+func SortBySpeedTest(serverList []conf.VServer) []VServerSpeedSort {
+	// 对着一堆 ServerList 进行排序
+	speedList := make([]VServerSpeedSort, 0)
+	var wg sync.WaitGroup
+	for i, server := range serverList {
+		server := server
+		i := i
+		wg.Add(1)
+		// 协程执行 Ping
+		go func() {
+			speedMs := Get3PingMs(server.Vmess.Add, 8)
+			speedList = append(speedList, VServerSpeedSort{
+				Speed:   speedMs,
+				VServer: server,
+				Index:   i,
+			})
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	sort.Slice(speedList, func(i, j int) bool {
+		return speedList[i].Speed-speedList[j].Speed < 0
+	})
+	return speedList
+}
+
+// 获取一个 host 的 ping 延时，阻塞，可用 timeout 设置超时
+func Get3PingMs(host string, timeoutSeconds int) float64 {
+	//执行 ping -c 3 baidu.com | grep '^rtt' | awk -F"/" '{print $5F}'
+	result, err := command.RunResult("timeout " + strconv.Itoa(timeoutSeconds) + " ping -c 3 " + host + " | grep '^rtt' | awk -F\"/\" '{print $5F}'")
 	if err == nil {
 		result = strings.Replace(result, " ", "", -1)
 		result = strings.Replace(result, "\n", "", -1)
 		result = strings.Replace(result, "\r", "", -1)
 		speedMs, err := strconv.ParseFloat(result, 64)
-		*serverList = append(*serverList, server)
 		if err != nil {
 			//return -1
+			log.E("ping error")
 			log.E(err)
-		}
-
-		if i == conf.ServerConfigNow.Id {
-			fmt.Println(
-				putil.F("["+strconv.Itoa(i)+"]", 4),
-				putil.F(server.Vmess.Ps, 50),
-				putil.F(server.Vmess.Add, 24),
-				putil.F(server.Vmess.Port, 10),
-				putil.F(server.Vmess.Net, 5),
-				putil.F(fmt.Sprint(speedMs)+" ms", 5),
-			)
+			return 9999
 		} else {
-			fmt.Println(
-				putil.F(" "+strconv.Itoa(i), 4),
-				putil.F(server.Vmess.Ps, 50),
-				putil.F(server.Vmess.Add, 24),
-				putil.F(server.Vmess.Port, 10),
-				putil.F(server.Vmess.Net, 5),
-				putil.F(fmt.Sprint(speedMs)+" ms", 5),
-			)
+			return speedMs
 		}
 	} else {
+		log.E("ping error")
 		log.E(err)
+		return 9999
 	}
-	wg.Done()
 }
 
 func SaveDefaultConfig(id string) {
@@ -142,7 +180,8 @@ func SaveDefaultConfig(id string) {
 	index, _ := strconv.Atoi(id)
 	if index >= len(conf.ServerConfigNow.ServerList) || index < 0 {
 		log.E("config id error")
-		os.Exit(-1)
+		//os.Exit(-1)
+		return
 	}
 	conf.ServerConfigNow.Id = index
 

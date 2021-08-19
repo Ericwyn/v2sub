@@ -45,6 +45,7 @@ func LoadLocalConfig() {
 		}
 
 		initFlag = true
+		log.I("load config msg success")
 	}
 }
 
