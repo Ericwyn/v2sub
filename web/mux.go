@@ -28,6 +28,7 @@ func StartApiServer(runPort int, pw string, v2subPath string) {
 	// 监听 v2sub 的配置文件
 	go startFsNotify()
 
+	//return
 	s := &http.Server{
 		Addr:           ":" + fmt.Sprint(runPort),
 		Handler:        newMux(pw, v2subPath),
@@ -240,10 +241,24 @@ func startFsNotify() {
 				if !ok {
 					return
 				}
-				//log.Println("event:", event)
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					//log.E("modified file:", event.Name)
-					log.I("sync config files")
+
+				// v2sub
+				// 如果是删除了数据的话
+				// 延迟 1s 钟后重新监听
+				if event.Op == fsnotify.Remove {
+					_ = watcher.Remove(event.Name)
+					time.AfterFunc(time.Microsecond*500, func() {
+						log.I("fsNotify: get config update event from v2sub")
+						log.I("fsNotify:update: ", event.Name)
+						_ = watcher.Add(event.Name)
+						if err != nil {
+							log.E(err)
+						}
+						fsNotifySyncConfig()
+					})
+				} else {
+					log.I("fsNotify: get config update event from file edit")
+					log.I("fsNotify:update: ", event.Name)
 					fsNotifySyncConfig()
 				}
 			case err, ok := <-watcher.Errors:
@@ -264,6 +279,8 @@ func startFsNotify() {
 	if err != nil {
 		log.E(err)
 	}
+
+	log.I("start watch config files")
 
 	<-done
 }
