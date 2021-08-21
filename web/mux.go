@@ -7,7 +7,6 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"math/big"
-	"net/http"
 )
 
 var v2subBinPath = "v2sub"
@@ -38,10 +37,14 @@ func initAPI(router *gin.Engine) {
 
 	var apiV1 *gin.RouterGroup
 	if adminPassword != "" {
-		apiV1 = router.Group("/api/v1", CorsMiddleware(), AuthMiddleware())
+		apiV1 = router.Group("/api/v1", AuthMiddleware())
 	} else {
-		apiV1 = router.Group("/api/v1", CorsMiddleware())
+		apiV1 = router.Group("/api/v1")
 	}
+
+	// 放开跨域请求
+	apiV1.Use(CorsMiddleware())
+
 	{
 
 		apiV1.GET("/v2sub/conn/start", apiConnStart)
@@ -100,7 +103,8 @@ func AuthMiddleware() gin.HandlerFunc {
 
 func CorsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		method := c.Request.Method
+		//method := c.Request.Method
+
 		origin := c.Request.Header.Get("Origin") //请求头部
 		if origin != "" {
 			//接收客户端发送的origin （重要！）
@@ -115,11 +119,6 @@ func CorsMiddleware() gin.HandlerFunc {
 			c.Header("Access-Control-Max-Age", "172800")
 			//允许客户端传递校验信息比如 cookie (重要)
 			c.Header("Access-Control-Allow-Credentials", "true")
-		}
-
-		//允许类型校验
-		if method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusNoContent)
 		}
 
 		defer func() {
