@@ -1,12 +1,14 @@
-# v2sub-web
+# v2sub-w
 
-v2subw (v2sub-web) 基于 v2sub 提供的一套 http api 接口
+v2subw (v2sub-webApi) 基于 v2sub 提供的一套 http api 接口
 
 方便当我们把 v2sub 部署到路由器或者服务器上面的时候可以对 v2sub 进行远程控制
 
 具体实现实际上是通过调用了本地 `v2sub` 命令来实现的功能
 
 可自己搭配前端客户端实现远程控制功能（免去了你手动 shell 登录之后手动敲命令~）
+
+推荐搭配 [v2sub-web 前端](https://github.com/Ericwyn/v2sub-web) 项目食用
 
 ## 运行参数和方法
 ```
