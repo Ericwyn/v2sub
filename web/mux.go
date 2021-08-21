@@ -2,17 +2,43 @@ package web
 
 import (
 	"crypto/rand"
+	"fmt"
+	"github.com/Ericwyn/GoTools/file"
 	"github.com/Ericwyn/v2sub/utils/log"
+	"github.com/fsnotify/fsnotify"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"math/big"
+	"net/http"
+	"os"
+	"time"
 )
 
 var v2subBinPath = "v2sub"
 var adminPassword string
 
-func NewMux(pw string, binPath string) *gin.Engine {
+var serverJson string
+var subsJson string
+
+func StartApiServer(runPort int, pw string, v2subPath string) {
+	// 首次载入本地的配置文件
+	initLoadConfig()
+
+	// 监听 v2sub 的配置文件
+	go startFsNotify()
+
+	s := &http.Server{
+		Addr:           ":" + fmt.Sprint(runPort),
+		Handler:        newMux(pw, v2subPath),
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+	_ = s.ListenAndServe()
+}
+
+func newMux(pw string, binPath string) *gin.Engine {
 	adminPassword = pw
 	v2subBinPath = binPath
 
@@ -147,4 +173,97 @@ func GeneralRandomStr(length int) string {
 		str += letterBytes[int(index64) : int(index64)+1]
 	}
 	return str
+}
+
+func initLoadConfig() {
+	// 载入配置
+	serverConfigFile := file.OpenFile("/etc/v2sub/server.json")
+	subConfigFile := file.OpenFile("/etc/v2sub/sub.json")
+	if !serverConfigFile.IsFile() || !subConfigFile.IsFile() {
+		log.E("can't not find the server.json and sub.json in /etc/v2sub/")
+		os.Exit(-1)
+	}
+
+	serverJsonBytes, err := serverConfigFile.Read()
+	if err != nil {
+		log.E("can't read /etc/v2sub/server.json")
+		log.E(err.Error())
+		os.Exit(-1)
+	}
+	serverJson = string(serverJsonBytes)
+
+	subJsonBytes, err := subConfigFile.Read()
+	if err != nil {
+		log.E("can't read /etc/v2sub/sub.json")
+		log.E(err.Error())
+		os.Exit(-1)
+	}
+	subsJson = string(subJsonBytes)
+}
+
+func fsNotifySyncConfig() {
+	// 载入配置
+	serverConfigFile := file.OpenFile("/etc/v2sub/server.json")
+	subConfigFile := file.OpenFile("/etc/v2sub/sub.json")
+
+	serverJsonBytes, err := serverConfigFile.Read()
+	if err == nil {
+		serverJson = string(serverJsonBytes)
+	} else {
+		log.E("read /etc/v2sub/server.json fail")
+		log.E(err.Error())
+	}
+
+	subJsonBytes, err := subConfigFile.Read()
+	if err == nil {
+		subsJson = string(subJsonBytes)
+	} else {
+		log.E("read /etc/v2sub/sub.json fail")
+		log.E(err.Error())
+	}
+}
+
+// 监听 /etc/v2sub/ 下 server.json  sub.json 文件的变化
+// 当文件有变化的时候重新载入
+func startFsNotify() {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.E(err)
+	}
+	defer watcher.Close()
+
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				//log.Println("event:", event)
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					//log.E("modified file:", event.Name)
+					log.I("sync config files")
+					fsNotifySyncConfig()
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.E("error:", err)
+			}
+		}
+	}()
+
+	// if this is a link, it will follow all the links and watch the file pointed to
+	err = watcher.Add("/etc/v2sub/server.json")
+	if err != nil {
+		log.E(err)
+	}
+	err = watcher.Add("/etc/v2sub/sub.json")
+	if err != nil {
+		log.E(err)
+	}
+
+	<-done
 }

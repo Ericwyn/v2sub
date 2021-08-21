@@ -6,8 +6,6 @@ import (
 	"github.com/Ericwyn/v2sub/conf"
 	"github.com/Ericwyn/v2sub/utils/log"
 	"github.com/Ericwyn/v2sub/web"
-	"net/http"
-	"time"
 )
 
 // v2sub web 管理界面后台
@@ -23,13 +21,6 @@ func main() {
 
 	log.I("[v2sub-w] 启动于", ":"+fmt.Sprint(*runPort))
 
-	s := &http.Server{
-		Addr:           ":" + fmt.Sprint(*runPort),
-		Handler:        web.NewMux(*adminPassword, *v2subPath),
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
-	}
-	_ = s.ListenAndServe()
+	web.StartApiServer(*runPort, *adminPassword, *v2subPath)
 
 }

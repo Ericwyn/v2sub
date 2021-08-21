@@ -135,18 +135,19 @@ func apiSubsList(ctx *gin.Context) {
 	//	"code": RestApiSuccess,
 	//	"data": conf.SubConfigNow,
 	//})
-	result, err := command.RunResult(v2subBinPath + " -sub list")
-	if err != nil {
+
+	if subsJson == "" {
 		ctx.JSON(200, gin.H{
 			"code": RestApiServerError,
-			"msg":  err.Error(),
+			"msg":  "read fail",
 		})
 	} else {
 		ctx.JSON(200, gin.H{
 			"code": RestApiSuccess,
-			"msg":  result,
+			"msg":  subsJson,
 		})
 	}
+
 }
 
 func apiSubsUpdateAll(ctx *gin.Context) {
@@ -171,16 +172,15 @@ func apiServersList(ctx *gin.Context) {
 	//	"code": RestApiSuccess,
 	//	"data": conf.ServerConfigNow.ServerList,
 	//})
-	result, err := command.RunResult(v2subBinPath + " -ser list")
-	if err != nil {
+	if serverJson == "" {
 		ctx.JSON(200, gin.H{
 			"code": RestApiServerError,
-			"msg":  err.Error(),
+			"msg":  "read fail",
 		})
 	} else {
 		ctx.JSON(200, gin.H{
 			"code": RestApiSuccess,
-			"msg":  result,
+			"msg":  serverJson,
 		})
 	}
 }
@@ -272,7 +272,6 @@ func apiConfHPortSet(ctx *gin.Context) {
 			})
 		}
 	}
-
 }
 
 func apiConfSPortSet(ctx *gin.Context) {
