@@ -249,17 +249,17 @@ func apiConfList(ctx *gin.Context) {
 }
 
 func apiConfHPortSet(ctx *gin.Context) {
-	id := ctx.Query("id")
-	log.I("[v2sub-w] set http port :" + id)
+	port := ctx.Query("port")
+	log.I("[v2sub-w] set http port :" + port)
 
-	index, err := strconv.Atoi(id)
+	index, err := strconv.Atoi(port)
 	if err != nil || index < 0 || index > 65535 {
 		ctx.JSON(200, gin.H{
 			"code": RestApiParamError,
-			"msg":  "id error",
+			"msg":  "port error",
 		})
 	} else {
-		result, err := command.RunResult(v2subBinPath + " -conf hport " + id)
+		result, err := command.RunResult(v2subBinPath + " -conf hport " + port)
 		if err != nil {
 			ctx.JSON(200, gin.H{
 				"code": RestApiServerError,
@@ -276,17 +276,17 @@ func apiConfHPortSet(ctx *gin.Context) {
 }
 
 func apiConfSPortSet(ctx *gin.Context) {
-	id := ctx.Query("id")
-	log.I("[v2sub-w] set http port :" + id)
+	port := ctx.Query("port")
+	log.I("[v2sub-w] set http port :" + port)
 
-	index, err := strconv.Atoi(id)
+	index, err := strconv.Atoi(port)
 	if err != nil || index < 0 || index > 65535 {
 		ctx.JSON(200, gin.H{
 			"code": RestApiParamError,
-			"msg":  "id error",
+			"msg":  "port error",
 		})
 	} else {
-		result, err := command.RunResult(v2subBinPath + " -conf sport " + id)
+		result, err := command.RunResult(v2subBinPath + " -conf sport " + port)
 		if err != nil {
 			ctx.JSON(200, gin.H{
 				"code": RestApiServerError,
