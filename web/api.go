@@ -52,11 +52,12 @@ func apiLogin(ctx *gin.Context) {
 
 var runLog = make([]string, 0)
 var runFlag = false
+var lastStartTimeUnix int64 = 0
 
 func apiConnStart(ctx *gin.Context) {
 	if runFlag {
 		ctx.JSON(200, gin.H{
-			"code": RestApiSuccess,
+			"code": RestApiParamError,
 			"msg":  "v2ray is running now!",
 		})
 		return
@@ -64,6 +65,7 @@ func apiConnStart(ctx *gin.Context) {
 	// 协程启动 v2sub
 	go func() {
 		runFlag = true
+		lastStartTimeUnix = time.Now().Unix()
 		_ = command.RunSyncForResultCb(func(s string) {
 			//fmt.Print(s)
 			s = strings.Replace(s, "\u0000", "", -1)
@@ -94,8 +96,9 @@ func apiConnStatus(ctx *gin.Context) {
 	ctx.JSON(200, gin.H{
 		"code": RestApiSuccess,
 		"msg":  "",
-		"data": map[string]string{
-			"running": fmt.Sprint(runFlag),
+		"data": map[string]interface{}{
+			"running":           fmt.Sprint(runFlag),
+			"lastStartTimeUnix": lastStartTimeUnix,
 		},
 	})
 }
@@ -105,6 +108,7 @@ func apiConnStop(ctx *gin.Context) {
 		log.I(s)
 	}, v2subBinPath, "-conn", "kill")
 	runFlag = false
+	lastStartTimeUnix = 0
 	ctx.JSON(200, gin.H{
 		"code": RestApiSuccess,
 		"msg":  "stop v2ray",
