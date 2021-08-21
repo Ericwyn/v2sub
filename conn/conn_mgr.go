@@ -90,6 +90,7 @@ func KillV2Sub() {
 					strEndWith(startCommand, "v2sub") && strEndWith(startCommand, "-conn") {
 					if p.Pid != int32(pidCurrent) {
 						fmt.Println("kill pid:", p.Pid, "-->", cmdline)
+						_ = command.RunSync("kill", fmt.Sprint(p.Pid))
 					}
 				}
 
