@@ -115,6 +115,15 @@ func apiConnStop(ctx *gin.Context) {
 	})
 }
 
+func apiConnRestart(ctx *gin.Context) {
+	_ = command.RunSyncForResultCb(func(s string) {
+		log.I(s)
+	}, v2subBinPath, "-conn", "kill")
+	runFlag = false
+	lastStartTimeUnix = 0
+	apiConnStart(ctx)
+}
+
 func apiConnLog(ctx *gin.Context) {
 	maxLogResLen := 4000
 	var resLog []string

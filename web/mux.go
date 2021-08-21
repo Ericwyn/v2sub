@@ -76,6 +76,7 @@ func initAPI(router *gin.Engine) {
 
 		apiV1.GET("/v2sub/conn/start", apiConnStart)
 		apiV1.GET("/v2sub/conn/stop", apiConnStop)
+		apiV1.GET("/v2sub/conn/restart", apiConnRestart)
 		apiV1.GET("/v2sub/conn/status", apiConnStatus)
 		apiV1.GET("/v2sub/conn/log", apiConnLog)
 		//apiV1.GET("/v2sub/")
