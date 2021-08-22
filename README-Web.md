@@ -23,6 +23,12 @@ v2subw (v2sub-webApi) 基于 v2sub 提供的一套 http api 接口
 
 ## 接口列表
 ```
+// pac.js 获取
+/pac.js, 可带上 ip, sPort, hPort 三个 url 参数
+
+// 鉴权
+/login 登录
+
 // 控制相关
 /api/v1/v2sub/conn/start
 /api/v1/v2sub/conn/stop
