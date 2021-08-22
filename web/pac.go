@@ -48,8 +48,6 @@ func renderPacJs(ipAddress string, hPort string, sPort string) string {
 	res = strings.Replace(res, "${hPort}", hPort, -1)
 	res = strings.Replace(res, "${sPort}", sPort, -1)
 
-	fmt.Println(res)
-
 	return res
 }
 
