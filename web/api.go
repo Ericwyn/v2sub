@@ -50,6 +50,14 @@ func apiLogin(ctx *gin.Context) {
 	}
 }
 
+func apiPacJs(ctx *gin.Context) {
+	// 支持手动设定地址
+	ip := ctx.Query("ip")
+	hPort := ctx.Query("hPort")
+	sPort := ctx.Query("sPort")
+	ctx.String(200, "%s", renderPacJs(ip, hPort, sPort))
+}
+
 var runLog = make([]string, 0)
 var runFlag = false
 var lastStartTimeUnix int64 = 0

@@ -62,6 +62,9 @@ func initAPI(router *gin.Engine) {
 	// 登录
 	router.POST("/login", apiLogin)
 
+	// 方便 Android 设备使用, 此处返回 pac.js 文件
+	router.GET("/pac.js", apiPacJs)
+
 	var apiV1 *gin.RouterGroup
 	if adminPassword != "" {
 		apiV1 = router.Group("/api/v1", AuthMiddleware())
@@ -71,7 +74,6 @@ func initAPI(router *gin.Engine) {
 
 	// 放开跨域请求
 	apiV1.Use(CorsMiddleware())
-
 	{
 
 		apiV1.GET("/v2sub/conn/start", apiConnStart)
