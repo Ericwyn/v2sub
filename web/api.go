@@ -147,6 +147,15 @@ func apiConnLog(ctx *gin.Context) {
 	ctx.String(200, "%s", res)
 }
 
+func apiConnectClearLog(ctx *gin.Context) {
+	runLog = make([]string, 0)
+
+	ctx.JSON(200, gin.H{
+		"code": RestApiSuccess,
+		"msg":  "clear v2ray log",
+	})
+}
+
 func apiSubsList(ctx *gin.Context) {
 	//ctx.JSON(200,gin.H {
 	//	"code": RestApiSuccess,
