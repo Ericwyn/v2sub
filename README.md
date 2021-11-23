@@ -13,6 +13,8 @@ v2sub 是命令行工具，支持在 linux 下命令行运行，也可以交叉�
         添加一个订阅，订阅节点自动增加到 ser list
     -sub update {name} 
         更新一个订阅
+    -sub customer {sub_name} {customer_result} 
+        手动更新一个订阅, customer_result 是 sub 地址返回的加密字符串
     -sub update all 
         更新全部订阅结果
     -sub remove {name} 

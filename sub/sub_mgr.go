@@ -19,34 +19,35 @@ import (
 func ParseArgs(args []string) {
 	param.AssistParamLength(args, 1)
 	switch args[0] {
-	case "a", "add":	// -sub a {sub_name} / -sub add {sub_name}
+	case "a", "add": // -sub a {sub_name} / -sub add {sub_name}
 		param.AssistParamLength(args, 3)
 		if args[1] != "" && args[2] != "" {
 			AddSub(args[1], args[2])
 		} else {
 			log.E("sub args error")
 		}
-	case "u", "update":  // -sub u {sub_name} / -sub update {sub_name} 更新某一个订阅
+	case "u", "update": // -sub u {sub_name} / -sub update {sub_name} 更新某一个订阅
 		param.AssistParamLength(args, 2)
 		UpdateSub(args[1])
-	case "ua", "updateall": 	// -sub ua / -sub updateall 更新全部订阅
+	case "c", "customer": // -sub c {sub_name} {customer_result} 更新某一个订阅
+		param.AssistParamLength(args, 3)
+		UpdateSubCustomer(args[1], args[2])
+	case "ua", "updateall": // -sub ua / -sub updateall 更新全部订阅
 		param.AssistParamLength(args, 1)
 		log.I("update all sub msgs")
 		for name, _ := range conf.SubConfigNow {
 			UpdateSub(name)
 		}
-	case "r", "remove":      // -sub remove {sub_name}
+	case "r", "remove": // -sub remove {sub_name}
 		param.AssistParamLength(args, 2)
 		RemoveSubByName(args[1])
-	case "l", "list":   //  -sub l / -sub list  展示当前订阅设置
+	case "l", "list": //  -sub l / -sub list  展示当前订阅设置
 		ListSubs()
 		os.Exit(0)
 	default:
 		log.E("sub args error")
 	}
 }
-
-
 
 // 将 sub 地址添加到 config
 // 将
@@ -91,6 +92,48 @@ func UpdateSub(subName string) {
 	// 对 sub 地址进行校验
 	// 获取 sub 地址的 JSON
 	serverList := checkSub(sub)
+	if serverList == nil || len(serverList) == 0 {
+		log.E("can't parse server msg from sub path")
+		return
+	}
+	log.I("parse sub url success, get ", len(serverList), " server configs")
+
+	log.I("delete old sub msgs")
+	// 删除旧的数据
+	RemoveSubByName(subName)
+
+	log.I("save new sub msgs")
+	// 保存数据 ServerList 和 SubConfig
+	conf.ServerConfigNow.ServerList = append(conf.ServerConfigNow.ServerList, serverList...)
+	conf.SubConfigNow[subName] = sub
+
+	// 判断配置 id 是否越界
+	if conf.ServerConfigNow.Id >= len(conf.ServerConfigNow.ServerList) {
+		conf.ServerConfigNow.Id = 0
+	}
+
+	log.I("save sub msgs success")
+
+	conf.FlushConfig()
+}
+
+// 手动将请求的 result 设置到 subName
+// 解决某些时候访问不到订阅地址的问题
+func UpdateSubCustomer(subName string, subResult string) {
+	log.I("start update sub by customer result")
+	if _, value := conf.SubConfigNow[subName]; !value {
+		log.E("sub name not exits")
+		return
+	}
+
+	sub := conf.SubConfigNow[subName]
+
+	serverList, err := parseSubMsg(subResult, subName)
+	if err != nil {
+		log.E("parse sub result error")
+		return
+	}
+
 	if serverList == nil || len(serverList) == 0 {
 		log.E("can't parse server msg from sub path")
 		return
@@ -230,4 +273,3 @@ func parseSubMsg(subResponse string, subName string) ([]conf.VServer, error) {
 	}
 	return serverList, nil
 }
-
