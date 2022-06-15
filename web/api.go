@@ -7,7 +7,6 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -59,7 +58,6 @@ func apiPacJs(ctx *gin.Context) {
 }
 
 var runLog = make([]string, 0)
-var runFlag = false
 var lastStartTimeUnix int64 = 0
 
 func apiConnStart(ctx *gin.Context) {
@@ -70,30 +68,9 @@ func apiConnStart(ctx *gin.Context) {
 		})
 		return
 	}
-	// 协程启动 v2sub
-	go func() {
-		runFlag = true
-		lastStartTimeUnix = time.Now().Unix()
-		_ = command.RunSyncForResultCb(func(s string) {
-			//fmt.Print(s)
-			s = strings.Replace(s, "\u0000", "", -1)
-			s = strings.Replace(s, "\t", "", -1)
-			s = strings.Replace(s, "\r", "", -1)
-			//s = strings.Split(s, "\n")[0]
-			runLog = append(runLog, s)
-		}, v2subBinPath, "-conn", "kill")
-		_ = command.RunSyncForResultCb(func(s string) {
-			//fmt.Print(s)
-			s = strings.Replace(s, "\u0000", "", -1)
-			s = strings.Replace(s, "\t", "", -1)
-			s = strings.Replace(s, "\r", "", -1)
-			//s = strings.Split(s, "\n")[0]
-			runLog = append(runLog, s)
-		}, v2subBinPath, "-conn", "start")
+	// 协程执行 v2sub -conn start
+	go v2subConnStart()
 
-		// 阻塞住了
-		runFlag = false
-	}()
 	ctx.JSON(200, gin.H{
 		"code": RestApiSuccess,
 		"msg":  "start v2ray",
@@ -112,9 +89,7 @@ func apiConnStatus(ctx *gin.Context) {
 }
 
 func apiConnStop(ctx *gin.Context) {
-	_ = command.RunSyncForResultCb(func(s string) {
-		log.I(s)
-	}, v2subBinPath, "-conn", "kill")
+	v2subConnKill()
 	runFlag = false
 	lastStartTimeUnix = 0
 	ctx.JSON(200, gin.H{
@@ -124,9 +99,7 @@ func apiConnStop(ctx *gin.Context) {
 }
 
 func apiConnRestart(ctx *gin.Context) {
-	_ = command.RunSyncForResultCb(func(s string) {
-		log.I(s)
-	}, v2subBinPath, "-conn", "kill")
+	v2subConnKill()
 	runFlag = false
 	lastStartTimeUnix = 0
 	apiConnStart(ctx)
@@ -179,7 +152,7 @@ func apiSubsList(ctx *gin.Context) {
 func apiSubsUpdateAll(ctx *gin.Context) {
 	//sub.ParseArgs([]string{"-sub", "updateall"})
 	//ctx.JSON(200, "update success")
-	result, err := command.RunResult(v2subBinPath + " -sub updateall")
+	result, err := v2subSubUpdateAll()
 	if err != nil {
 		ctx.JSON(200, gin.H{
 			"code": RestApiServerError,
@@ -245,7 +218,7 @@ func apiServersSetX(ctx *gin.Context) {
 	//	"msg": "set config index to : " + strconv.Itoa(speedSorts[0].Index),
 	//	"data": speedSorts,
 	//})
-	result, err := command.RunResult(v2subBinPath + " -ser setx")
+	result, err := v2subSerSetX()
 	if err != nil {
 		ctx.JSON(200, gin.H{
 			"code": RestApiServerError,
@@ -260,7 +233,7 @@ func apiServersSetX(ctx *gin.Context) {
 }
 
 func apiConfList(ctx *gin.Context) {
-	result, err := command.RunResult(v2subBinPath + " -conf list")
+	result, err := v2subConfList()
 	if err != nil {
 		ctx.JSON(200, gin.H{
 			"code": RestApiServerError,
@@ -285,7 +258,7 @@ func apiConfHPortSet(ctx *gin.Context) {
 			"msg":  "port error",
 		})
 	} else {
-		result, err := command.RunResult(v2subBinPath + " -conf hport " + port)
+		result, err := v2subConfHttpPort(port)
 		if err != nil {
 			ctx.JSON(200, gin.H{
 				"code": RestApiServerError,
@@ -311,7 +284,7 @@ func apiConfSPortSet(ctx *gin.Context) {
 			"msg":  "port error",
 		})
 	} else {
-		result, err := command.RunResult(v2subBinPath + " -conf sport " + port)
+		result, err := v2subConfSocksPort(port)
 		if err != nil {
 			ctx.JSON(200, gin.H{
 				"code": RestApiServerError,
@@ -340,7 +313,7 @@ func apiConfLConnSet(ctx *gin.Context) {
 		if enable == "1" || enable == "true" {
 			enableStr = "true"
 		}
-		result, err := command.RunResult(v2subBinPath + " -conf lconn " + enableStr)
+		result, err := v2subConfLocalConnect(enableStr)
 		if err != nil {
 			ctx.JSON(200, gin.H{
 				"code": RestApiServerError,

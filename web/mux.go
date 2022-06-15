@@ -25,8 +25,8 @@ func StartApiServer(runPort int, pw string, v2subPath string) {
 	// 首次载入本地的配置文件
 	initLoadConfig()
 
-	// 监听 v2sub 的配置文件
-	go startFsNotify()
+	//// 监听 v2sub 的配置文件
+	//go startFsNotify()
 
 	//return
 	s := &http.Server{
