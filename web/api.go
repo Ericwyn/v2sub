@@ -2,7 +2,6 @@ package web
 
 import (
 	"fmt"
-	"github.com/Ericwyn/v2sub/utils/command"
 	"github.com/Ericwyn/v2sub/utils/log"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -195,7 +194,7 @@ func apiServersSet(ctx *gin.Context) {
 			"msg":  "id error",
 		})
 	} else {
-		result, err := command.RunResult(v2subBinPath + " -ser set " + id)
+		result, err := v2subSerSet(id)
 		if err != nil {
 			ctx.JSON(200, gin.H{
 				"code": RestApiServerError,

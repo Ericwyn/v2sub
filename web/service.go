@@ -10,8 +10,12 @@ import (
 var runFlag = false
 
 func v2subConnKill() {
-	runLog = append(runLog, "命令执行: "+(v2subBinPath+" -conn  kill"))
+	runLog = append(runLog, "命令执行: "+v2subBinPath+" -conn  kill")
+	runLog = append(runLog, "")
 	_ = command.RunSyncForResultCb(func(s string) {
+		s = strings.Replace(s, "\u0000", "", -1)
+		s = strings.Replace(s, "\t", "", -1)
+		s = strings.Replace(s, "\r", "", -1)
 		log.I(s)
 		runLog = append(runLog, "result: "+s)
 	}, v2subBinPath, "-conn", "kill")
@@ -20,14 +24,9 @@ func v2subConnKill() {
 func v2subConnStart() {
 	runFlag = true
 	lastStartTimeUnix = time.Now().Unix()
-	_ = command.RunSyncForResultCb(func(s string) {
-		//fmt.Print(s)
-		s = strings.Replace(s, "\u0000", "", -1)
-		s = strings.Replace(s, "\t", "", -1)
-		s = strings.Replace(s, "\r", "", -1)
-		//s = strings.Split(s, "\n")[0]
-		runLog = append(runLog, s)
-	}, v2subBinPath, "-conn", "kill")
+	v2subConnKill()
+	runLog = append(runLog, "命令执行: "+v2subBinPath+" -conn start")
+	runLog = append(runLog, "")
 	_ = command.RunSyncForResultCb(func(s string) {
 		//fmt.Print(s)
 		s = strings.Replace(s, "\u0000", "", -1)
@@ -43,6 +42,11 @@ func v2subConnStart() {
 
 func v2subSubUpdateAll() (string, error) {
 	cmd := v2subBinPath + " -sub updateall"
+	return runCmdAndLog(cmd)
+}
+
+func v2subSerSet(id string) (string, error) {
+	cmd := v2subBinPath + " -ser set " + id
 	return runCmdAndLog(cmd)
 }
 
@@ -72,9 +76,10 @@ func v2subConfLocalConnect(trueOfFalse string) (string, error) {
 }
 
 func runCmdAndLog(cmd string) (string, error) {
-	runLog = append(runLog, "命令执行:"+cmd)
+	runLog = append(runLog, "命令执行: "+cmd)
+	runLog = append(runLog, "")
 	result, err := command.RunResult(cmd)
-	runLog = append(runLog, "result: "+result)
+	runLog = append(runLog, ", result: "+result)
 	if err != nil {
 		runLog = append(runLog, err.Error())
 	}
