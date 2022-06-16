@@ -20,7 +20,6 @@ func main() {
 	conf.LoadLocalConfig()
 
 	log.I("[v2sub-w] 启动于", ":"+fmt.Sprint(*runPort))
-
 	web.StartApiServer(*runPort, *adminPassword, *v2subPath)
 
 }

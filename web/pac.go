@@ -7,33 +7,6 @@ import (
 	"strings"
 )
 
-// 参考 pac 文档
-// 因为 v2sub 的路由文件其实已经很完善了
-// android 手机端可以直接设置代理为 http 端口
-// 但是如果 v2sub 的代理关闭了的话, 那就连普通网页都上不了(不会自动切换)
-// pac 脚本的话就可以解决这个问题
-// https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_PAC_file
-const pacJs = `
-function FindProxyForURL(url, host) {
-    // If the protocol or URL matches, send direct.
-    if (url.substring(0, 4)=="ftp:")
-        return "DIRECT";
-     
-    // If the requested website is hosted within the internal network, send direct.
-    if (isPlainHostName(host) ||
-        shExpMatch(host, "*.local") ||
-        isInNet(dnsResolve(host), "10.0.0.0", "255.0.0.0") ||
-        isInNet(dnsResolve(host), "172.16.0.0",  "255.240.0.0") ||
-        isInNet(dnsResolve(host), "192.168.0.0",  "255.255.0.0") ||
-        isInNet(dnsResolve(host), "127.0.0.0", "255.255.255.0")) {
-        return "DIRECT";
-    }
-          
-    // DEFAULT RULE: All other traffic, use below proxies, in fail-over order.
-    return "PROXY ${ipAddress}:${hPort}; SOCKS5 ${ipAddress}:${sPort}; DIRECT";
-}
-`
-
 func renderPacJs(ipAddress string, hPort string, sPort string) string {
 	if ipAddress == "" {
 		ipAddress = getIp(false)
@@ -44,7 +17,8 @@ func renderPacJs(ipAddress string, hPort string, sPort string) string {
 	if hPort == "" {
 		hPort = "1081"
 	}
-	res := strings.Replace(pacJs, "${ipAddress}", ipAddress, -1)
+	res := strings.Replace(pacJs, "SOCKS5 127.0.0.1:1080", "PROXY ${ipAddress}:${hPort}; SOCKS5 ${ipAddress}:${sPort}; DIRECT", 1)
+	res = strings.Replace(res, "${ipAddress}", ipAddress, -1)
 	res = strings.Replace(res, "${hPort}", hPort, -1)
 	res = strings.Replace(res, "${sPort}", sPort, -1)
 
