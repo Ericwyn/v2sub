@@ -2,16 +2,17 @@ package conn
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"strconv"
+	"strings"
+
 	"github.com/Ericwyn/GoTools/file"
 	"github.com/Ericwyn/v2sub/conf"
 	"github.com/Ericwyn/v2sub/utils/command"
 	"github.com/Ericwyn/v2sub/utils/log"
 	"github.com/Ericwyn/v2sub/utils/param"
 	"github.com/Ericwyn/v2sub/utils/putil"
-	"github.com/shirou/gopsutil/process"
-	"os"
-	"strconv"
-	"strings"
 )
 
 const v2rayBinPath = "/usr/local/bin/v2ray"
@@ -75,30 +76,33 @@ func startV2ray() {
 	}
 }
 
-//
 func KillV2Sub() {
-	processes, _ := process.Processes()
-	pidCurrent := os.Getpid()
-	for _, p := range processes {
-		cmdline, err := p.Cmdline()
-		if err == nil {
-			if strings.Index(cmdline, "v2ray") >= 0 ||
-				strings.Index(cmdline, "v2sub") >= 0 {
-				//fmt.Println(cmdline)
-				startCommand := strings.Split(cmdline, " ")[0]
-				if strEndWith(startCommand, "v2ray") ||
-					strEndWith(startCommand, "v2sub") && strEndWith(startCommand, "-conn") {
-					if p.Pid != int32(pidCurrent) {
-						fmt.Println("kill pid:", p.Pid, "-->", cmdline)
-						_ = command.RunSync("kill", fmt.Sprint(p.Pid))
-					}
-				}
+	grep := exec.Command("grep", "v2") // 根据v2关键字进行模糊查询进程
+	ps := exec.Command("ps", "cax")
 
-			}
+	// Get ps's stdout and attach it to grep's stdin.
+	pipe, _ := ps.StdoutPipe()
+	defer pipe.Close()
+
+	grep.Stdin = pipe
+
+	// Run ps first.
+	ps.Start()
+
+	// Run and get the output of grep.
+	res, _ := grep.Output()
+	resL := string(res)
+
+	processListStr := strings.Split(resL, "\n")
+	for _, pc := range processListStr {
+		elemList := strings.Split(pc, " ")
+
+		pid := elemList[0]
+		pName := elemList[len(elemList)-1]
+		if pName != "v2ray" && pName != "v2sub" {
+			continue
 		}
-	}
-}
 
-func strEndWith(str string, end string) bool {
-	return strings.Index(str, end)+len(end) == len(str)
+		_ = command.RunSync("kill", fmt.Sprint(pid))
+	}
 }
