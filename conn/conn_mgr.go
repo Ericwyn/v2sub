@@ -13,9 +13,21 @@ import (
 	"github.com/Ericwyn/v2sub/utils/log"
 	"github.com/Ericwyn/v2sub/utils/param"
 	"github.com/Ericwyn/v2sub/utils/putil"
+	"github.com/gin-gonic/gin"
+	"net/http"
+	"time"
 )
 
 const v2rayBinPath = "/usr/local/bin/v2ray"
+
+var pacFilePath = "/etc/v2sub/v2sub.pac"
+
+var defaultPacText = `
+// 默认全部直连模式
+function FindProxyForURL(url, host) {
+   return 'DIRECT';
+}
+`
 
 func ParseArgs(args []string) {
 	param.AssistParamLength(args, 1)
@@ -26,6 +38,10 @@ func ParseArgs(args []string) {
 		fmt.Println("v2ray 已停止")
 	case "kill": // -conn stop 停止其他正在运行的 v2ray 和 v2sub
 		KillV2Sub()
+	case "start-pac": // -conn start-pac 启动 v2ray 的同时开启 23333/v2sub.pac 返回
+		readPacConfigFile()
+		go startPacServerOnly()
+		startV2ray()
 	default:
 		log.E("sub args error")
 	}
@@ -74,6 +90,40 @@ func startV2ray() {
 		log.E(err.Error())
 		os.Exit(-1)
 	}
+}
+
+func readPacConfigFile() {
+	//pacText := defaultPacText
+	pacFile := file.OpenFile(pacFilePath)
+	if pacFile.Exits() {
+		read, err := pacFile.Read()
+		if err != nil {
+			log.E("read pac config error, use default pac config")
+		} else {
+			defaultPacText = string(read)
+		}
+	} else {
+		log.E("read pac config error, pacFile in '" + pacFilePath + "' not exits" +
+			", use default pac config")
+	}
+}
+
+func startPacServerOnly() {
+	router := gin.Default()
+	router.GET("v2sub.pac", func(context *gin.Context) {
+		//context.String(200, "utf-8", pacText)
+		context.File(pacFilePath)
+	})
+
+	//return
+	s := &http.Server{
+		Addr:           ":23333",
+		Handler:        router,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+	_ = s.ListenAndServe()
 }
 
 func KillV2Sub() {

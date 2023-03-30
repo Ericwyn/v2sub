@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-const versionMsg = "Release 1.0.0, 2021.08.03"
+const versionMsg = "Release 1.0.2, 2023.03.30"
 
 func main() {
 
@@ -90,6 +90,8 @@ func printArgsHelp() {
 连接
     -conn start 
         启用 v2ray 连接 server
+    -conn start-pac
+        启用 v2ray 连接 server，并同时在 :23333/v2sub.pac 返回 /etc/v2sub/v2sub.pac 文件
     -conn kill 
         停止 v2ray （kill 掉其他 v2sub 和 v2ray）
 

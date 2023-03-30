@@ -46,7 +46,9 @@ v2sub 是命令行工具，支持在 linux 下命令行运行，也可以交叉�
   
 连接
     -conn start 
-        启用 v2ray 连接 server
+        启用 v2ray 连接 server    
+    -conn start-pac
+        启用 v2ray 连接 server，并同时在 :23333/v2sub.pac 返回 /etc/v2sub/v2sub.pac 文件
     -conn kill 
         停止 v2ray （kill 掉其他 v2sub 和 v2ray）
 
