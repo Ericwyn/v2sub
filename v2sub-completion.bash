@@ -1,32 +1,37 @@
-#/usr/bin/env bash
-function _myscript(){
-    if [[ "${COMP_CWORD}" == "1" ]];then
-        COMP_WORD="-sub -ser -conf -conn -v -h"
-        COMPREPLY=($(compgen -W "$COMP_WORD" -- ${COMP_WORDS[${COMP_CWORD}]}))
-    else
-        case ${COMP_WORDS[$[$COMP_CWORD-1]]} in
+#!/bin/bash
+
+_v2sub_completion() {
+    local cur prev opts sub_opts ser_opts conf_opts conn_opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    opts="-sub -ser -conf -conn -v -h"
+    sub_opts="add update customer remove list"
+    ser_opts="list set setx setflush speedtest"
+    conf_opts="sport hport lconn list"
+    conn_opts="start start-pac kill"
+
+    case "${prev}" in
         -sub)
-        COMP_WORD_2="add update remove list"
-        COMPREPLY=($(compgen -W "${COMP_WORD_2}" ${COMP_WORDS[${COMP_CWORD}]}))
-        ;;
-
+            COMPREPLY=( $(compgen -W "${sub_opts}" -- ${cur}) )
+            return 0
+            ;;
         -ser)
-        COMP_WORD_2="list set setx setflush speedtest"
-        COMPREPLY=($(compgen -W "${COMP_WORD_2}" ${COMP_WORDS[${COMP_CWORD}]}))
-        ;;
-
+            COMPREPLY=( $(compgen -W "${ser_opts}" -- ${cur}) )
+            return 0
+            ;;
         -conf)
-        COMP_WORD_2="sport hport lconn list"
-        COMPREPLY=($(compgen -W "${COMP_WORD_2}" ${COMP_WORDS[${COMP_CWORD}]}))
-        ;;
-
+            COMPREPLY=( $(compgen -W "${conf_opts}" -- ${cur}) )
+            return 0
+            ;;
         -conn)
-        COMP_WORD_2="start start-pac kill"
-        COMPREPLY=($(compgen -W "${COMP_WORD_2}" ${COMP_WORDS[${COMP_CWORD}]}))
-        ;;
-
-        esac
-    fi
+            COMPREPLY=( $(compgen -W "${conn_opts}" -- ${cur}) )
+            return 0
+            ;;
+        *)
+            COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+            return 0
+            ;;
+    esac
 }
-# 注册命令补全函数
-complete -F _myscript v2sub
+complete -F _v2sub_completion v2sub
