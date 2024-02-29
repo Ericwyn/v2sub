@@ -84,9 +84,15 @@ func startV2ray() {
 	fmt.Println()
 	fmt.Println()
 
-	err := command.RunSync(v2rayBinPath, "-config", conf.GetV2rayConfigPath())
+	var err error
+	if useNewV2rayVersion() {
+		err = command.RunSync(v2rayBinPath, "run", "-c", conf.GetV2rayConfigPath())
+	} else {
+		err = command.RunSync(v2rayBinPath, "-config", conf.GetV2rayConfigPath())
+	}
+
 	if err != nil {
-		log.E("run command error", []string{v2rayBinPath, "-c", conf.GetV2rayConfigPath()})
+		log.E("start v2ray error...")
 		log.E(err.Error())
 		os.Exit(-1)
 	}
@@ -154,5 +160,21 @@ func KillV2Sub() {
 		}
 
 		_ = command.RunSync("kill", fmt.Sprint(pid))
+	}
+}
+
+// useNewV2rayVersion
+// v2ray 有新旧两个版本
+// 新版本的命令改了(但我不知道是从哪个版本开始改的)
+// 旧版本可以使用 v2ray -version / v2ray -config xxxxxx.json
+// 新版本只能使用 v2ray version / v2ray run -c xxxxx.json
+func useNewV2rayVersion() bool {
+	result, err := command.RunResult("v2ray -version")
+	if err != nil {
+		log.I("check new v2ray version, 'v2ray -version' get error msg, use new v2ray version cmd")
+		return true
+	} else {
+		log.I("check new v2ray version, 'v2ray -version' get result, ", result)
+		return false
 	}
 }
