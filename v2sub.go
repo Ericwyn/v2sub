@@ -13,19 +13,14 @@ import (
 const versionMsg = "Release 1.0.4, 2024.02.29"
 
 func main() {
-
 	bootArgs := os.Args
 
 	if len(os.Args) < 2 {
-		// 输出 help
 		printArgsHelp()
 		os.Exit(0)
 	}
 
 	conf.LoadLocalConfig()
-
-	// 解析 args，依据不同的 args 进行不同的业务
-	// 将运行路径参数删除掉
 	parseArg(bootArgs[1:])
 }
 
@@ -39,7 +34,7 @@ func parseArg(args []string) {
 		fmt.Println("https://github.com/Ericwyn/v2sub")
 	case "-sub":
 		sub.ParseArgs(args[1:])
-	case "-conf": // 设置端口/局域网连接
+	case "-conf":
 		conf.ParseArgs(args[1:])
 	case "-ser":
 		server.ParseArgs(args[1:])
@@ -89,11 +84,15 @@ func printArgsHelp() {
   
 连接
     -conn start 
-        启用 v2ray 连接 server
+        后台启动 v2ray 并写入 pid/runtime 状态
+    -conn status
+        查看当前 v2ray 真实运行状态
+    -conn restart
+        重启当前由 v2sub 管理的 v2ray 进程
     -conn start-pac
         启用 v2ray 连接 server，并同时在 :23333/v2sub.pac 返回 /etc/v2sub/v2sub.pac 文件
     -conn kill 
-        停止 v2ray （kill 掉其他 v2sub 和 v2ray）
+        按 pid 停止当前由 v2sub 管理的 v2ray
 
 其他
     -v, --version

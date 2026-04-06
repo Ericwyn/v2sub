@@ -3,14 +3,15 @@ package command
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
+	"syscall"
 )
 
 type CmdRunCb func(string)
 
 func RunSyncForResultCb(cmdResCb CmdRunCb, name string, arg ...string) error {
 	cmd := exec.Command(name, arg...)
-	// 命令的错误输出和标准输出都连接到同一个管道
 	stdout, err := cmd.StdoutPipe()
 	cmd.Stderr = cmd.Stdout
 
@@ -21,7 +22,6 @@ func RunSyncForResultCb(cmdResCb CmdRunCb, name string, arg ...string) error {
 	if err = cmd.Start(); err != nil {
 		return err
 	}
-	// 从管道中实时获取输出并打印到终端
 	for {
 		tmp := make([]byte, 1024)
 		_, err := stdout.Read(tmp)
@@ -39,7 +39,6 @@ func RunSyncForResultCb(cmdResCb CmdRunCb, name string, arg ...string) error {
 
 func RunSync(name string, arg ...string) error {
 	cmd := exec.Command(name, arg...)
-	// 命令的错误输出和标准输出都连接到同一个管道
 	stdout, err := cmd.StdoutPipe()
 	cmd.Stderr = cmd.Stdout
 
@@ -50,7 +49,6 @@ func RunSync(name string, arg ...string) error {
 	if err = cmd.Start(); err != nil {
 		return err
 	}
-	// 从管道中实时获取输出并打印到终端
 	for {
 		tmp := make([]byte, 1024)
 		_, err := stdout.Read(tmp)
@@ -67,15 +65,66 @@ func RunSync(name string, arg ...string) error {
 }
 
 func RunResult(s string) (string, error) {
-	//函数返回一个*Cmd，用于使用给出的参数执行name指定的程序
 	cmd := exec.Command("/bin/bash", "-c", s)
 
-	//读取io.Writer类型的cmd.Stdout，再通过bytes.Buffer(缓冲byte类型的缓冲器)将byte类型转化为string类型(out.String():这是bytes类型提供的接口)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 
-	//Run执行c包含的命令，并阻塞直到完成。  这里stdout被取出，cmd.Wait()无法正确获取stdin,stdout,stderr，则阻塞在那了
 	err := cmd.Run()
 
 	return out.String(), err
+}
+
+func StartBackground(name string, arg ...string) (*exec.Cmd, error) {
+	cmd := exec.Command(name, arg...)
+
+	devNull, err := os.OpenFile(os.DevNull, os.O_RDWR, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd.Stdout = devNull
+	cmd.Stderr = devNull
+	cmd.Stdin = devNull
+
+	if err = cmd.Start(); err != nil {
+		_ = devNull.Close()
+		return nil, err
+	}
+
+	return cmd, nil
+}
+
+func FindProcess(pid int) (*os.Process, error) {
+	return os.FindProcess(pid)
+}
+
+func IsProcessAlive(pid int) bool {
+	if pid <= 0 {
+		return false
+	}
+	process, err := FindProcess(pid)
+	if err != nil {
+		return false
+	}
+	if err = process.Signal(syscall.Signal(0)); err != nil {
+		return false
+	}
+	return true
+}
+
+func TerminateProcess(pid int) error {
+	process, err := FindProcess(pid)
+	if err != nil {
+		return err
+	}
+	return process.Signal(syscall.SIGTERM)
+}
+
+func KillProcess(pid int) error {
+	process, err := FindProcess(pid)
+	if err != nil {
+		return err
+	}
+	return process.Signal(syscall.SIGKILL)
 }

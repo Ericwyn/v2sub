@@ -3,11 +3,25 @@ package web
 import (
 	"github.com/Ericwyn/v2sub/utils/command"
 	"github.com/Ericwyn/v2sub/utils/log"
+	"github.com/gin-contrib/sessions"
 	"strings"
 	"time"
 )
 
 var runFlag = false
+
+func checkLogin(session sessions.Session) bool {
+	hadLogin := session.Get("hadLogin")
+	if loginFlag, ok := hadLogin.(bool); !ok || !loginFlag {
+		return false
+	}
+	loginTimeValue := session.Get("loginTime")
+	loginTime, ok := loginTimeValue.(int64)
+	if !ok {
+		return false
+	}
+	return loginTime > 0 && time.Now().Unix()-loginTime <= 60*60*2
+}
 
 func v2subConnKill() {
 	runLog = append(runLog, "命令执行: "+v2subBinPath+" -conn  kill")
@@ -28,15 +42,12 @@ func v2subConnStart() {
 	runLog = append(runLog, "命令执行: "+v2subBinPath+" -conn start")
 	runLog = append(runLog, "")
 	_ = command.RunSyncForResultCb(func(s string) {
-		//fmt.Print(s)
 		s = strings.Replace(s, "\u0000", "", -1)
 		s = strings.Replace(s, "\t", "", -1)
 		s = strings.Replace(s, "\r", "", -1)
-		//s = strings.Split(s, "\n")[0]
 		runLog = append(runLog, s)
 	}, v2subBinPath, "-conn", "start")
 
-	// 阻塞住了
 	runFlag = false
 }
 
